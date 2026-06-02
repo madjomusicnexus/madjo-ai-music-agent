@@ -1,4 +1,5 @@
 import { useApp, type Page } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 import {
   LayoutDashboard,
   User,
@@ -7,11 +8,14 @@ import {
   ListChecks,
   Menu,
   X,
+  BookOpen,
+  LogOut,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems: { id: Page; label: string; icon: typeof LayoutDashboard; badge?: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'teacher', label: 'Teacher Tab', icon: BookOpen },
   { id: 'routine', label: 'Practice', icon: ListChecks },
   { id: 'generate', label: 'Generate', icon: Sparkles, badge: 'AI' },
   { id: 'instruments', label: 'Instruments', icon: Music },
@@ -24,6 +28,11 @@ export default function Sidebar() {
 
   const nav = (id: Page) => {
     navigate(id);
+    setMobileOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
     setMobileOpen(false);
   };
 
@@ -81,11 +90,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-5 py-4 border-t border-surface-100">
-        <div className="flex items-center gap-2 text-accent-600">
+      <div className="px-3 py-3 border-t border-surface-100 space-y-2">
+        <div className="flex items-center gap-2 px-2 text-accent-600">
           <Sparkles className="w-4 h-4" />
           <span className="text-xs font-semibold">{student.streak} day streak</span>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-surface-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+        >
+          <LogOut className="w-[18px] h-[18px]" />
+          Sign Out
+        </button>
       </div>
     </>
   );

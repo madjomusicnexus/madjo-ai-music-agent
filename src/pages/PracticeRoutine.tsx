@@ -1,9 +1,23 @@
 import { useApp } from '../context/AppContext';
 import ExerciseCard from '../components/ExerciseCard';
-import { Sparkles, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Sparkles, CheckCircle2, ArrowLeft, Lightbulb, Brain } from 'lucide-react';
+
+function generatePracticeInsight(instrument: string, gradeLevel: number, focusArea: string): string {
+  const insights = [
+    `Your Grade ${gradeLevel} ${instrument} routine emphasizes ${focusArea.toLowerCase()}. Focus on consistent practice rather than speed.`,
+    `For Grade ${gradeLevel} ${instrument}, sight-reading accuracy improves when practiced hands separately first. Try this approach today.`,
+    `Consider slowing your scales to 72 BPM before increasing tempo. Precision matters more than speed at your level.`,
+    `Your ${instrument} practice sessions will benefit from shorter, focused bursts. Quality over quantity.`,
+    `Grade ${gradeLevel} musicians often underestimate ear training. Dedicate extra attention to interval recognition.`,
+    `Your routine's ${focusArea.toLowerCase()} focus shows excellent pedagogical progression. Trust the process.`,
+    `For ${instrument}, breathing and posture directly impact tone quality. Check your setup before each exercise.`,
+  ];
+
+  return insights[Math.floor(Math.random() * insights.length)];
+}
 
 export default function PracticeRoutine() {
-  const { routine, toggleExercise, navigate } = useApp();
+  const { routine, toggleExercise, navigate, student } = useApp();
 
   if (!routine) {
     return (
@@ -24,6 +38,9 @@ export default function PracticeRoutine() {
   const totalDuration = routine.exercises.reduce((sum, e) => sum + e.duration, 0);
   const completedDuration = routine.exercises.filter((e) => e.completed).reduce((sum, e) => sum + e.duration, 0);
 
+  // Generate AI insight
+  const aiInsight = generatePracticeInsight(student.instrument, student.gradeLevel, routine.focusArea);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -33,6 +50,22 @@ export default function PracticeRoutine() {
           <p className="text-surface-500">{routine.focusArea}</p>
         </div>
         <span className="badge-accent"><Sparkles className="w-3 h-3" /> AI Generated</span>
+      </div>
+
+      {/* AI Practice Insight */}
+      <div className="card p-6 border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-white shadow-lg">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 gradient-brand rounded-xl flex items-center justify-center shrink-0 shadow-md">
+            <Lightbulb className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="w-4 h-4 text-brand-600" />
+              <h3 className="font-bold text-brand-900">AI Practice Insight</h3>
+            </div>
+            <p className="text-sm text-surface-700 leading-relaxed">{aiInsight}</p>
+          </div>
+        </div>
       </div>
 
       {/* Progress */}

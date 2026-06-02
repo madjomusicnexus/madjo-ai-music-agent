@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { StudentProfile, Instrument, GradeLevel, PracticeRoutine, PracticeExercise } from '../types';
 import { mockStudent, mockPracticeRoutine } from '../data/mockData';
-import { callAIWithFallback } from '../lib/ai';
+import { supabase } from '../lib/supabase';
 
-export type Page = 'dashboard' | 'profile' | 'instruments' | 'routine' | 'generate';
+export type Page = 'dashboard' | 'profile' | 'instruments' | 'routine' | 'generate' | 'teacher';
 
 interface AppState {
   page: Page;
@@ -65,50 +65,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const { instrument, gradeLevel, dailyPracticeGoal } = state.student;
 
-      const systemPrompt = `You are an expert music teacher. Reply only with valid raw JSON, no markdown, no code fences.`;
+      const { data, error } = await supabase.functions.invoke('generate-routine', {
+        body: {
+          instrument,
+          gradeLevel,
+          dailyPracticeGoal,
+        },
+      });
 
-      const userPrompt = `Generate a ${dailyPracticeGoal}-minute daily practice routine for a Grade ${gradeLevel} ${instrument} student.
-Return this exact JSON structure:
-{
-  "focusArea": "short description of today's focus",
-  "exercises": [
-    {
-      "id": "ex-1",
-      "title": "Exercise title",
-      "description": "Brief description",
-      "category": "warmup",
-      "duration": 5,
-      "difficulty": "intermediate",
-      "instructions": ["Step 1", "Step 2", "Step 3"],
-      "tips": ["Tip 1"],
-      "completed": false
-    }
-  ]
-}
-Rules:
-- Include 5-7 exercises
-- Duration values must sum to ${dailyPracticeGoal}
-- category must be one of: warmup, technique, sight-reading, repertoire, ear-training, theory, cool-down
-- difficulty must be one of: beginner, intermediate, advanced
-- Make exercises specific to ${instrument} at Grade ${gradeLevel} level`;
+      console.log("SUPABASE RESPONSE:", data);
+      console.log("SUPABASE ERROR:", error);
 
-      const text = await callAIWithFallback(
-        ['groq', 'claude', 'openai'],
-        systemPrompt,
-        userPrompt,
-        1200
-      );
+      if (error) {
+        throw new Error(error.message || 'Failed to call edge function');
+      }
 
-      // Strip markdown code fences if present
-      let clean = text.trim();
-      if (clean.startsWith('```json')) clean = clean.slice(7);
-      else if (clean.startsWith('```')) clean = clean.slice(3);
-      if (clean.endsWith('```')) clean = clean.slice(0, -3);
-      clean = clean.trim();
-
-      const data = JSON.parse(clean);
-
-      if (!data.exercises || !Array.isArray(data.exercises)) {
+      if (!data || !data.exercises || !Array.isArray(data.exercises)) {
         throw new Error('Invalid response from AI — missing exercises');
       }
 

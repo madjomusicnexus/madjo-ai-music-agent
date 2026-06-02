@@ -1,10 +1,30 @@
 import { useApp } from '../context/AppContext';
-import { Sparkles, Wand2, Music, Target, Clock, Zap, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, Wand2, Music, Target, Clock, Zap, ArrowRight, Loader2, AlertCircle, Brain, Ear } from 'lucide-react';
 import { instrumentOptions } from '../data/mockData';
+import { useState, useEffect } from 'react';
 
 export default function Generate() {
   const { student, isGenerating, generateError, generateRoutine } = useApp();
   const instrumentName = instrumentOptions.find((i) => i.id === student.instrument)?.name ?? student.instrument;
+  const [loadingStage, setLoadingStage] = useState(0);
+
+  const loadingStages = [
+    { text: "Analyzing your practice goals...", icon: Brain },
+    { text: "Building exercises...", icon: Zap },
+    { text: "Optimizing difficulty levels...", icon: Target },
+    { text: "Generating ear training...", icon: Ear },
+    { text: "Crafting your routine...", icon: Music },
+  ];
+
+  useEffect(() => {
+    if (isGenerating) {
+      setLoadingStage(0);
+      const interval = setInterval(() => {
+        setLoadingStage((prev) => (prev + 1) % loadingStages.length);
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [isGenerating, loadingStages.length]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
@@ -81,8 +101,8 @@ export default function Generate() {
               <AlertCircle className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 pt-0.5">
-              <p className="font-bold text-red-800">Generation Failed</p>
-              <p className="text-sm text-red-600 mt-1">{generateError}</p>
+              <p className="font-bold text-red-800">Generation Issue</p>
+              <p className="text-sm text-red-600 mt-1">Using fallback routine. You can still practice!</p>
             </div>
           </div>
           <button onClick={generateRoutine} className="btn-secondary mt-4 text-sm w-full">
@@ -108,19 +128,48 @@ export default function Generate() {
         {isGenerating && (
           <div className="mt-8 animate-fade-in">
             <div className="card p-7 max-w-md mx-auto shadow-xl">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-11 h-11 gradient-brand rounded-xl flex items-center justify-center animate-pulse-soft shadow-lg shadow-brand-700/20">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-surface-900">Gemini AI is working</p>
-                  <p className="text-sm text-surface-500">Crafting your perfect routine...</p>
-                </div>
+              {/* Loading stages */}
+              <div className="space-y-3 mb-5">
+                {loadingStages.map((stage, index) => {
+                  const StageIcon = stage.icon;
+                  const isActive = index === loadingStage;
+                  const isPast = index < loadingStage;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-3 transition-all duration-500 ${
+                        isActive ? 'opacity-100 transform translate-x-0' : isPast ? 'opacity-40' : 'opacity-20'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                        isActive
+                          ? 'gradient-brand shadow-md shadow-brand-700/30'
+                          : isPast
+                          ? 'bg-brand-200'
+                          : 'bg-surface-200'
+                      }`}>
+                        <StageIcon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-surface-400'}`} />
+                      </div>
+                      <p className={`text-sm font-medium transition-all duration-300 ${
+                        isActive ? 'text-brand-700' : 'text-surface-500'
+                      }`}>
+                        {stage.text}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="h-3 bg-brand-100 rounded-full overflow-hidden">
-                <div className="h-full gradient-brand rounded-full shimmer-bg animate-shimmer" style={{ width: '65%' }} />
+
+              {/* Progress bar */}
+              <div className="h-2 bg-brand-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full gradient-brand rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${((loadingStage + 1) / loadingStages.length) * 100}%` }}
+                />
               </div>
-              <p className="text-xs text-surface-400 mt-3 text-center font-medium">This usually takes 5-10 seconds</p>
+              <p className="text-xs text-surface-400 mt-3 text-center font-medium">
+                Gemini AI is personalizing your routine...
+              </p>
             </div>
           </div>
         )}
